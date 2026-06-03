@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { ProductFormValues } from "../types";
+import type { LearningCandidate, ProductFormValues } from "../types";
 import { getTodayDate } from "../utils/date";
 import { parseMoney } from "../utils/money";
 
@@ -10,13 +10,15 @@ type ReceiptCandidate = {
   officialItemName: string;
   amountWithTax: string;
   category: string;
+  completedFromDictionary: boolean;
 };
 
 type ReceiptReaderProps = {
+  learningCandidates: LearningCandidate[];
   onRegisterItems: (items: ProductFormValues[]) => void;
 };
 
-export function ReceiptReader({ onRegisterItems }: ReceiptReaderProps) {
+export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptReaderProps) {
   const [purchaseDate, setPurchaseDate] = useState(getTodayDate());
   const [storeName, setStoreName] = useState("");
   const [text, setText] = useState("");
@@ -38,7 +40,7 @@ export function ReceiptReader({ onRegisterItems }: ReceiptReaderProps) {
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean)
-      .map(parseReceiptLine);
+      .map((line) => parseReceiptLine(line, learningCandidates));
 
     setCandidates(nextCandidates);
     setMessage(`${nextCandidates.length}件の候補を作成しました。`);
@@ -136,6 +138,9 @@ export function ReceiptReader({ onRegisterItems }: ReceiptReaderProps) {
                 <span>候補 {index + 1}</span>
               </label>
               <p className="item-subtitle">{candidate.rawLine}</p>
+              {candidate.completedFromDictionary && (
+                <p className="dictionary-match">学習辞書から補完</p>
+              )}
               <label className="field">
                 <span>正式商品名</span>
                 <input
@@ -186,19 +191,33 @@ export function ReceiptReader({ onRegisterItems }: ReceiptReaderProps) {
   );
 }
 
-function parseReceiptLine(line: string): ReceiptCandidate {
+function parseReceiptLine(
+  line: string,
+  learningCandidates: LearningCandidate[],
+): ReceiptCandidate {
   const amountMatch = line.match(/([0-9０-９][0-9０-９,，]*)\s*円?\s*$/);
   const amountText = amountMatch ? normalizeNumber(amountMatch[1]) : "";
   const itemName = amountMatch ? line.slice(0, amountMatch.index).trim() : line;
+  const dictionaryMatch = findDictionaryMatch(itemName || line, learningCandidates);
 
   return {
     id: crypto.randomUUID(),
     selected: true,
     rawLine: line,
-    officialItemName: itemName || line,
+    officialItemName: dictionaryMatch?.officialItemName ?? itemName ?? line,
     amountWithTax: amountText,
-    category: "",
+    category: dictionaryMatch?.category ?? "",
+    completedFromDictionary: Boolean(dictionaryMatch),
   };
+}
+
+function findDictionaryMatch(
+  receiptItemName: string,
+  learningCandidates: LearningCandidate[],
+): LearningCandidate | undefined {
+  return learningCandidates
+    .filter((candidate) => candidate.receiptItemName === receiptItemName)
+    .sort((a, b) => b.confirmedCount - a.confirmedCount)[0];
 }
 
 function normalizeNumber(value: string): string {

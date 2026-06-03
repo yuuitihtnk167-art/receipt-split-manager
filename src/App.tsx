@@ -200,7 +200,10 @@ function App() {
         )}
 
         {activeTab === "receipt" && (
-          <ReceiptReader onRegisterItems={handleSubmitReceiptItems} />
+          <ReceiptReader
+            learningCandidates={data.learningCandidates}
+            onRegisterItems={handleSubmitReceiptItems}
+          />
         )}
 
         {activeTab === "plans" && (

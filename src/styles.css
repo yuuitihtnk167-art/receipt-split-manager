@@ -304,6 +304,17 @@ h2 {
   accent-color: #31634f;
 }
 
+.dictionary-match {
+  justify-self: start;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #dff1e7;
+  color: #24533f;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
 .check-row {
   display: flex;
   min-height: 36px;
