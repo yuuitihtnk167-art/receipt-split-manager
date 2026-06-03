@@ -108,22 +108,56 @@ function App() {
     const now = new Date().toISOString();
     const productEntries = valuesList
       .filter((values) => parseMoney(values.amountWithTax) > 0)
-      .map((values) => ({
-        id: crypto.randomUUID(),
-        purchaseDate: values.purchaseDate,
-        storeName: values.storeName.trim(),
-        receiptItemName: values.receiptItemName.trim(),
-        officialItemName: values.officialItemName.trim(),
-        amountWithTax: parseMoney(values.amountWithTax),
-        category: values.category.trim(),
-        inputMethod: "normal" as const,
-        createdAt: now,
-        updatedAt: now,
-      }));
+      .map((values) => {
+        const inputMethod: ProductEntry["inputMethod"] =
+          values.inputMethod === "split" && Number(values.splitMonths) >= 2
+            ? "split"
+            : "normal";
+
+        return {
+          id: crypto.randomUUID(),
+          purchaseDate: values.purchaseDate,
+          storeName: values.storeName.trim(),
+          receiptItemName: values.receiptItemName.trim(),
+          officialItemName: values.officialItemName.trim(),
+          amountWithTax: parseMoney(values.amountWithTax),
+          category: values.category.trim(),
+          inputMethod,
+          createdAt: now,
+          updatedAt: now,
+          splitMonths: values.splitMonths,
+          splitStartMonth: values.splitStartMonth,
+          splitMemo: values.splitMemo,
+        };
+      });
 
     if (productEntries.length === 0) {
       return;
     }
+
+    const splitSettings: SplitSetting[] = productEntries
+      .filter((productEntry) => productEntry.inputMethod === "split")
+      .map((productEntry) => ({
+        productEntryId: productEntry.id,
+        months: Number(productEntry.splitMonths),
+        startMonth: productEntry.splitStartMonth,
+        rounding: "last_month_adjust",
+        memo: productEntry.splitMemo.trim(),
+      }));
+
+    const splitPlans = productEntries.flatMap((productEntry) => {
+      if (productEntry.inputMethod !== "split") {
+        return [];
+      }
+
+      return createSplitPlans({
+        productEntryId: productEntry.id,
+        amountWithTax: productEntry.amountWithTax,
+        months: Number(productEntry.splitMonths),
+        startMonth: productEntry.splitStartMonth,
+        memo: productEntry.splitMemo.trim(),
+      });
+    });
 
     const learningCandidates = productEntries.reduce(
       (candidates, productEntry) => upsertLearningCandidate(candidates, productEntry),
@@ -132,11 +166,25 @@ function App() {
 
     updateData({
       ...data,
-      productEntries: [...productEntries, ...data.productEntries],
+      productEntries: [
+        ...productEntries.map(
+          ({
+            splitMonths,
+            splitStartMonth,
+            splitMemo,
+            ...productEntry
+          }) => productEntry,
+        ),
+        ...data.productEntries,
+      ],
+      splitSettings: [...splitSettings, ...data.splitSettings],
+      splitPlans: [...splitPlans, ...data.splitPlans],
       learningCandidates,
     });
 
-    setProductListMessage(`レシート読取から${productEntries.length}件を登録しました。`);
+    setProductListMessage(
+      `レシート読取から${productEntries.length}件を登録しました。分割入力は月別予定にも反映されています。`,
+    );
     setActiveTab("products");
   }
 

@@ -11,6 +11,10 @@ type ReceiptCandidate = {
   amountWithTax: string;
   category: string;
   completedFromDictionary: boolean;
+  inputMethod: "normal" | "split";
+  splitMonths: string;
+  splitStartMonth: string;
+  splitMemo: string;
 };
 
 type ReceiptReaderProps = {
@@ -30,7 +34,9 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
         (candidate) =>
           candidate.selected &&
           candidate.officialItemName.trim() &&
-          parseMoney(candidate.amountWithTax) > 0,
+          parseMoney(candidate.amountWithTax) > 0 &&
+          (candidate.inputMethod === "normal" ||
+            (Number(candidate.splitMonths) >= 2 && candidate.splitStartMonth)),
       ),
     [candidates],
   );
@@ -40,7 +46,7 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean)
-      .map((line) => parseReceiptLine(line, learningCandidates));
+      .map((line) => parseReceiptLine(line, learningCandidates, purchaseDate.slice(0, 7)));
 
     setCandidates(nextCandidates);
     setMessage(`${nextCandidates.length}件の候補を作成しました。`);
@@ -72,10 +78,10 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
         officialItemName: candidate.officialItemName,
         amountWithTax: candidate.amountWithTax,
         category: candidate.category,
-        inputMethod: "normal",
-        splitMonths: "2",
-        splitStartMonth: purchaseDate.slice(0, 7),
-        splitMemo: "",
+        inputMethod: candidate.inputMethod,
+        splitMonths: candidate.splitMonths,
+        splitStartMonth: candidate.splitStartMonth,
+        splitMemo: candidate.splitMemo,
       })),
     );
   }
@@ -173,6 +179,63 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
                   placeholder="例：食費"
                 />
               </label>
+              <fieldset className="choice-group">
+                <legend>入力方法</legend>
+                <label>
+                  <input
+                    type="radio"
+                    name={`receipt-input-method-${candidate.id}`}
+                    checked={candidate.inputMethod === "normal"}
+                    onChange={() => updateCandidate(candidate.id, "inputMethod", "normal")}
+                  />
+                  通常入力
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name={`receipt-input-method-${candidate.id}`}
+                    checked={candidate.inputMethod === "split"}
+                    onChange={() => updateCandidate(candidate.id, "inputMethod", "split")}
+                  />
+                  分割入力
+                </label>
+              </fieldset>
+              {candidate.inputMethod === "split" && (
+                <div className="split-panel">
+                  <label className="field">
+                    <span>分割月数</span>
+                    <input
+                      type="number"
+                      min="2"
+                      step="1"
+                      value={candidate.splitMonths}
+                      onChange={(event) =>
+                        updateCandidate(candidate.id, "splitMonths", event.target.value)
+                      }
+                    />
+                  </label>
+                  <label className="field">
+                    <span>開始月</span>
+                    <input
+                      type="month"
+                      value={candidate.splitStartMonth}
+                      onChange={(event) =>
+                        updateCandidate(candidate.id, "splitStartMonth", event.target.value)
+                      }
+                    />
+                  </label>
+                  <label className="field">
+                    <span>メモ</span>
+                    <textarea
+                      value={candidate.splitMemo}
+                      onChange={(event) =>
+                        updateCandidate(candidate.id, "splitMemo", event.target.value)
+                      }
+                      placeholder="例：生活コスト配分として入力"
+                    />
+                  </label>
+                </div>
+              )}
             </article>
           ))}
         </div>
@@ -194,6 +257,7 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
 function parseReceiptLine(
   line: string,
   learningCandidates: LearningCandidate[],
+  defaultStartMonth: string,
 ): ReceiptCandidate {
   const amountMatch = line.match(/([0-9０-９][0-9０-９,，]*)\s*円?\s*$/);
   const amountText = amountMatch ? normalizeNumber(amountMatch[1]) : "";
@@ -208,6 +272,10 @@ function parseReceiptLine(
     amountWithTax: amountText,
     category: dictionaryMatch?.category ?? "",
     completedFromDictionary: Boolean(dictionaryMatch),
+    inputMethod: "normal",
+    splitMonths: "2",
+    splitStartMonth: defaultStartMonth,
+    splitMemo: "",
   };
 }
 
