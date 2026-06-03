@@ -6,9 +6,15 @@ type ProductListProps = {
   products: ProductEntry[];
   splitSettings: SplitSetting[];
   onDeleteProduct: (productId: string) => void;
+  notice?: string;
 };
 
-export function ProductList({ products, splitSettings, onDeleteProduct }: ProductListProps) {
+export function ProductList({
+  products,
+  splitSettings,
+  onDeleteProduct,
+  notice,
+}: ProductListProps) {
   const settingsByProductId = new Map(
     splitSettings.map((setting) => [setting.productEntryId, setting]),
   );
@@ -29,6 +35,8 @@ export function ProductList({ products, splitSettings, onDeleteProduct }: Produc
         <p className="eyebrow">登録済み商品一覧</p>
         <h2>実支出の記録</h2>
       </div>
+
+      {notice && <p className="info-message">{notice}</p>}
 
       {products.length === 0 ? (
         <p className="empty-message">登録済みの商品はありません。</p>

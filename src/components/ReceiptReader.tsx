@@ -28,8 +28,7 @@ export function ReceiptReader({ onRegisterItems }: ReceiptReaderProps) {
         (candidate) =>
           candidate.selected &&
           candidate.officialItemName.trim() &&
-          parseMoney(candidate.amountWithTax) > 0 &&
-          candidate.category.trim(),
+          parseMoney(candidate.amountWithTax) > 0,
       ),
     [candidates],
   );
@@ -59,7 +58,7 @@ export function ReceiptReader({ onRegisterItems }: ReceiptReaderProps) {
 
   function handleRegisterSelected(): void {
     if (selectedCandidates.length === 0) {
-      setMessage("登録できる候補がありません。正式商品名、金額、分類を確認してください。");
+      setMessage("登録できる候補がありません。正式商品名と金額を確認してください。");
       return;
     }
 

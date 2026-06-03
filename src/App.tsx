@@ -34,6 +34,7 @@ type TabId = (typeof tabs)[number]["id"];
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabId>("today");
+  const [productListMessage, setProductListMessage] = useState("");
   const [data, setData] = useState<AppData>(() => {
     if (typeof localStorage === "undefined") {
       return emptyAppData;
@@ -100,22 +101,30 @@ function App() {
     });
 
     setActiveTab(values.inputMethod === "split" ? "today" : "products");
+    setProductListMessage("");
   }
 
   function handleSubmitReceiptItems(valuesList: ProductFormValues[]): void {
     const now = new Date().toISOString();
-    const productEntries = valuesList.map((values) => ({
-      id: crypto.randomUUID(),
-      purchaseDate: values.purchaseDate,
-      storeName: values.storeName.trim(),
-      receiptItemName: values.receiptItemName.trim(),
-      officialItemName: values.officialItemName.trim(),
-      amountWithTax: parseMoney(values.amountWithTax),
-      category: values.category.trim(),
-      inputMethod: "normal" as const,
-      createdAt: now,
-      updatedAt: now,
-    }));
+    const productEntries = valuesList
+      .filter((values) => parseMoney(values.amountWithTax) > 0)
+      .map((values) => ({
+        id: crypto.randomUUID(),
+        purchaseDate: values.purchaseDate,
+        storeName: values.storeName.trim(),
+        receiptItemName: values.receiptItemName.trim(),
+        officialItemName: values.officialItemName.trim(),
+        amountWithTax: parseMoney(values.amountWithTax),
+        category: values.category.trim(),
+        inputMethod: "normal" as const,
+        createdAt: now,
+        updatedAt: now,
+      }));
+
+    if (productEntries.length === 0) {
+      return;
+    }
+
     const learningCandidates = productEntries.reduce(
       (candidates, productEntry) => upsertLearningCandidate(candidates, productEntry),
       data.learningCandidates,
@@ -127,6 +136,7 @@ function App() {
       learningCandidates,
     });
 
+    setProductListMessage(`レシート読取から${productEntries.length}件を登録しました。`);
     setActiveTab("products");
   }
 
@@ -206,6 +216,7 @@ function App() {
             products={data.productEntries}
             splitSettings={data.splitSettings}
             onDeleteProduct={handleDeleteProduct}
+            notice={productListMessage}
           />
         )}
 
