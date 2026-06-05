@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Tesseract from "tesseract.js";
 import type { LearningCandidate, ProductFormValues } from "../types";
 import { getTodayDate } from "../utils/date";
@@ -24,12 +24,10 @@ type ReceiptReaderProps = {
   onRegisterItems: (items: ProductFormValues[]) => void;
 };
 
-type OcrEditableLine = {
-  index: number;
-  line: string;
-  itemNameCandidate: string;
-  amountCandidate: string;
-  looksUnnecessary: boolean;
+type ReceiptImagePreview = {
+  id: string;
+  name: string;
+  url: string;
 };
 
 export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptReaderProps) {
@@ -40,7 +38,8 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
   const [message, setMessage] = useState("");
   const [isReadingImages, setIsReadingImages] = useState(false);
   const [ocrProgress, setOcrProgress] = useState("");
-  const [preprocessEnabled, setPreprocessEnabled] = useState(true);
+  const [imagePreviews, setImagePreviews] = useState<ReceiptImagePreview[]>([]);
+  const [expandedImage, setExpandedImage] = useState<ReceiptImagePreview | null>(null);
   const selectedCandidates = useMemo(
     () =>
       candidates.filter(
@@ -53,8 +52,12 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
       ),
     [candidates],
   );
-  const editableLines = useMemo(() => createEditableLines(text), [text]);
-  const hasOcrLines = text.length > 0;
+
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
+    };
+  }, [imagePreviews]);
 
   function handleParse(): void {
     const nextCandidates = text
@@ -78,14 +81,21 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
     setIsReadingImages(true);
     setCandidates([]);
     setMessage("");
+    setExpandedImage(null);
+    setImagePreviews(
+      selectedFiles.map((file) => ({
+        id: crypto.randomUUID(),
+        name: file.name || "レシート画像",
+        url: URL.createObjectURL(file),
+      })),
+    );
 
     try {
       const imageTexts: string[] = [];
 
       for (const [index, file] of selectedFiles.entries()) {
         setOcrProgress(`${index + 1}/${selectedFiles.length}枚目を読み取り中`);
-        const imageForOcr = preprocessEnabled ? await preprocessImageForOcr(file) : file;
-        const result = await Tesseract.recognize(imageForOcr, "jpn+eng");
+        const result = await Tesseract.recognize(file, "jpn+eng");
         const recognizedText = result.data.text.trim();
 
         if (recognizedText) {
@@ -106,44 +116,12 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
     }
   }
 
-  function updateOcrLine(lineIndex: number, value: string): void {
-    setText((currentText) => {
-      const lines = currentText.split(/\r?\n/);
-      lines[lineIndex] = value;
-      return lines.join("\n");
-    });
-    setCandidates([]);
-  }
-
-  function deleteOcrLine(lineIndex: number): void {
-    setText((currentText) =>
-      currentText
-        .split(/\r?\n/)
-        .filter((_, index) => index !== lineIndex)
-        .join("\n"),
-    );
-    setCandidates([]);
-  }
-
-  function removeBlankLines(): void {
-    setText((currentText) =>
-      currentText
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .join("\n"),
-    );
-    setCandidates([]);
-  }
-
-  function removeLikelyUnnecessaryLines(): void {
-    setText((currentText) =>
-      currentText
-        .split(/\r?\n/)
-        .filter((line) => !isLikelyUnnecessaryLine(line))
-        .join("\n"),
-    );
-    setCandidates([]);
+  function addManualCandidate(): void {
+    setCandidates((currentCandidates) => [
+      ...currentCandidates,
+      createManualCandidate(purchaseDate.slice(0, 7)),
+    ]);
+    setMessage("画像を見ながら入力できる候補を追加しました。");
   }
 
   function updateCandidate(
@@ -209,15 +187,6 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
 
         <div className="field">
           <span>画像から読み取り</span>
-          <label className="toggle-row">
-            <input
-              type="checkbox"
-              checked={preprocessEnabled}
-              disabled={isReadingImages}
-              onChange={(event) => setPreprocessEnabled(event.target.checked)}
-            />
-            OCR前に画像を補正する
-          </label>
           <div className="image-actions">
             <label className={`file-button${isReadingImages ? " disabled" : ""}`}>
               カメラで撮影
@@ -251,6 +220,44 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
           </div>
         </div>
 
+        {imagePreviews.length > 0 && (
+          <div className="receipt-preview-panel">
+            <div className="receipt-preview-heading">
+              <div>
+                <span>レシート画像</span>
+                <p>画像はこの画面での確認用です。localStorageには保存しません。</p>
+              </div>
+              <button type="button" className="secondary-button" onClick={addManualCandidate}>
+                手入力候補を追加
+              </button>
+            </div>
+            <div className="receipt-preview-list">
+              {imagePreviews.map((preview, index) => (
+                <article key={preview.id} className="receipt-preview-card">
+                  <button
+                    type="button"
+                    className="receipt-preview-button"
+                    onClick={() => setExpandedImage(preview)}
+                  >
+                    <img src={preview.url} alt={`${index + 1}枚目のレシート画像`} />
+                  </button>
+                  <div className="receipt-preview-meta">
+                    <strong>{index + 1}枚目</strong>
+                    <span>{preview.name}</span>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => setExpandedImage(preview)}
+                    >
+                      拡大表示
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
+
         <label className="field">
           <span>OCR結果の貼り付け・修正</span>
           <textarea
@@ -260,67 +267,6 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
           />
         </label>
 
-        {hasOcrLines && (
-          <div className="ocr-editor">
-            <div className="ocr-editor-heading">
-              <div>
-                <span>OCR結果の編集支援</span>
-                <p>不要な行を削除し、商品名候補と金額候補を確認してから分解してください。</p>
-              </div>
-              <div className="ocr-editor-actions">
-                <button type="button" className="secondary-button" onClick={removeBlankLines}>
-                  空行削除
-                </button>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={removeLikelyUnnecessaryLines}
-                >
-                  不要そうな行を削除
-                </button>
-              </div>
-            </div>
-
-            <div className="ocr-line-list">
-              {editableLines.map((line) => (
-                <article
-                  key={`${line.index}-${line.line}`}
-                  className={`ocr-line-card${line.looksUnnecessary ? " muted" : ""}`}
-                >
-                  <label className="field">
-                    <span>行 {line.index + 1}</span>
-                    <input
-                      type="text"
-                      value={line.line}
-                      onChange={(event) => updateOcrLine(line.index, event.target.value)}
-                    />
-                  </label>
-                  <dl className="ocr-line-detail">
-                    <div>
-                      <dt>商品名候補</dt>
-                      <dd>{line.itemNameCandidate || "未抽出"}</dd>
-                    </div>
-                    <div>
-                      <dt>金額候補</dt>
-                      <dd>{line.amountCandidate ? `${line.amountCandidate}円` : "未抽出"}</dd>
-                    </div>
-                  </dl>
-                  {line.looksUnnecessary && (
-                    <p className="line-hint">不要そうな行として検出</p>
-                  )}
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => deleteOcrLine(line.index)}
-                  >
-                    この行を削除
-                  </button>
-                </article>
-              ))}
-            </div>
-          </div>
-        )}
-
         <button
           type="button"
           className="primary-button"
@@ -328,6 +274,10 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
           disabled={isReadingImages}
         >
           1行ごとに分解
+        </button>
+
+        <button type="button" className="secondary-button" onClick={addManualCandidate}>
+          画像を見ながら手入力候補を追加
         </button>
       </div>
 
@@ -352,6 +302,14 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
               {candidate.completedFromDictionary && (
                 <p className="dictionary-match">学習辞書から補完</p>
               )}
+              <label className="field">
+                <span>レシート上の商品名</span>
+                <input
+                  type="text"
+                  value={candidate.rawLine}
+                  onChange={(event) => updateCandidate(candidate.id, "rawLine", event.target.value)}
+                />
+              </label>
               <label className="field">
                 <span>正式商品名</span>
                 <input
@@ -455,6 +413,24 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
       <p className="empty-message">
         画像の自動合成、重複行の自動削除、独自カメラUIはまだ実装していません。読み取り結果は手修正できます。
       </p>
+
+      {expandedImage && (
+        <div className="image-modal" role="dialog" aria-modal="true">
+          <div className="image-modal-header">
+            <strong>{expandedImage.name}</strong>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setExpandedImage(null)}
+            >
+              閉じる
+            </button>
+          </div>
+          <div className="image-modal-body">
+            <img src={expandedImage.url} alt="拡大表示したレシート画像" />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -484,131 +460,20 @@ function parseReceiptLine(
   };
 }
 
-async function preprocessImageForOcr(file: File): Promise<Blob> {
-  const image = await loadImage(file);
-  const scale = 2;
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(image.naturalWidth * scale);
-  canvas.height = Math.round(image.naturalHeight * scale);
-
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    return file;
-  }
-
-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imageData.data;
-  const contrast = 1.45;
-  const threshold = 168;
-
-  for (let index = 0; index < data.length; index += 4) {
-    const gray = data[index] * 0.299 + data[index + 1] * 0.587 + data[index + 2] * 0.114;
-    const contrasted = clamp((gray - 128) * contrast + 128);
-    const binary = contrasted > threshold ? 255 : 0;
-
-    data[index] = binary;
-    data[index + 1] = binary;
-    data[index + 2] = binary;
-  }
-
-  context.putImageData(imageData, 0, 0);
-
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob ?? file), "image/png");
-  });
-}
-
-function loadImage(file: File): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    const objectUrl = URL.createObjectURL(file);
-
-    image.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(image);
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error("画像を読み込めませんでした。"));
-    };
-    image.src = objectUrl;
-  });
-}
-
-function createEditableLines(value: string): OcrEditableLine[] {
-  return value.split(/\r?\n/).map((line, index) => {
-    const { itemNameCandidate, amountCandidate } = extractLineCandidates(line);
-
-    return {
-      index,
-      line,
-      itemNameCandidate,
-      amountCandidate,
-      looksUnnecessary: isLikelyUnnecessaryLine(line),
-    };
-  });
-}
-
-function extractLineCandidates(line: string): {
-  itemNameCandidate: string;
-  amountCandidate: string;
-} {
-  const trimmedLine = line.trim();
-  const amountMatch = trimmedLine.match(/([0-9０-９][0-9０-９,，]*)\s*円?\s*$/);
-
-  if (!amountMatch) {
-    return {
-      itemNameCandidate: trimmedLine,
-      amountCandidate: "",
-    };
-  }
-
+function createManualCandidate(defaultStartMonth: string): ReceiptCandidate {
   return {
-    itemNameCandidate: trimmedLine.slice(0, amountMatch.index).trim(),
-    amountCandidate: normalizeNumber(amountMatch[1]),
+    id: crypto.randomUUID(),
+    selected: true,
+    rawLine: "",
+    officialItemName: "",
+    amountWithTax: "",
+    category: "",
+    completedFromDictionary: false,
+    inputMethod: "normal",
+    splitMonths: "2",
+    splitStartMonth: defaultStartMonth,
+    splitMemo: "",
   };
-}
-
-function isLikelyUnnecessaryLine(line: string): boolean {
-  const normalizedLine = line.trim().toLowerCase();
-
-  if (!normalizedLine) {
-    return true;
-  }
-
-  const noisePatterns = [
-    /領収/,
-    /レシート/,
-    /合計/,
-    /小計/,
-    /税込/,
-    /税率/,
-    /消費税/,
-    /対象/,
-    /お預/,
-    /釣/,
-    /おつり/,
-    /現金/,
-    /カード/,
-    /電子マネー/,
-    /登録番号/,
-    /電話/,
-    /tel/,
-    /担当/,
-    /レジ/,
-    /日時/,
-    /時刻/,
-    /ありがとうございました/,
-  ];
-
-  return noisePatterns.some((pattern) => pattern.test(normalizedLine));
-}
-
-function clamp(value: number): number {
-  return Math.max(0, Math.min(255, value));
 }
 
 function findDictionaryMatch(
