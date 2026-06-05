@@ -11,6 +11,7 @@ export type ProductEntry = {
   amountWithTax: number;
   category: string;
   inputMethod: InputMethod;
+  memo?: string;
   createdAt: string;
   updatedAt: string;
 };

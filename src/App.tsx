@@ -57,6 +57,7 @@ function App() {
       amountWithTax,
       category: values.category.trim(),
       inputMethod: values.inputMethod,
+      memo: values.splitMemo.trim(),
       createdAt: now,
       updatedAt: now,
     };
@@ -111,6 +112,76 @@ function App() {
     });
   }
 
+  function handleUpdateProduct(productId: string, values: ProductFormValues): void {
+    const currentProduct = data.productEntries.find((product) => product.id === productId);
+
+    if (!currentProduct) {
+      return;
+    }
+
+    const amountWithTax = parseMoney(values.amountWithTax);
+    const updatedProduct: ProductEntry = {
+      ...currentProduct,
+      purchaseDate: values.purchaseDate,
+      storeName: values.storeName.trim(),
+      receiptItemName: values.receiptItemName.trim(),
+      officialItemName: values.officialItemName.trim(),
+      amountWithTax,
+      category: values.category.trim(),
+      inputMethod: values.inputMethod,
+      memo: values.splitMemo.trim(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const existingPlans = data.splitPlans.filter((plan) => plan.productEntryId === productId);
+    const doneMonths = new Set(
+      existingPlans
+        .filter((plan) => plan.status === "done")
+        .map((plan) => plan.targetMonth),
+    );
+    const splitMonths = Number(values.splitMonths);
+    const nextSplitSetting: SplitSetting | null =
+      values.inputMethod === "split"
+        ? {
+            productEntryId: productId,
+            months: splitMonths,
+            startMonth: values.splitStartMonth,
+            rounding: "last_month_adjust",
+            memo: values.splitMemo.trim(),
+          }
+        : null;
+    const nextSplitPlans =
+      nextSplitSetting === null
+        ? []
+        : createSplitPlans({
+            productEntryId: productId,
+            amountWithTax,
+            months: nextSplitSetting.months,
+            startMonth: nextSplitSetting.startMonth,
+            memo: nextSplitSetting.memo,
+          }).map((plan) => ({
+            ...plan,
+            status: doneMonths.has(plan.targetMonth) ? ("done" as const) : plan.status,
+          }));
+
+    updateData({
+      productEntries: data.productEntries.map((product) =>
+        product.id === productId ? updatedProduct : product,
+      ),
+      splitSettings:
+        nextSplitSetting === null
+          ? data.splitSettings.filter((setting) => setting.productEntryId !== productId)
+          : [
+              nextSplitSetting,
+              ...data.splitSettings.filter((setting) => setting.productEntryId !== productId),
+            ],
+      splitPlans: [
+        ...nextSplitPlans,
+        ...data.splitPlans.filter((plan) => plan.productEntryId !== productId),
+      ],
+    });
+  }
+
   function handleImportData(importedData: AppData): void {
     updateData(importedData);
   }
@@ -152,6 +223,8 @@ function App() {
           <ProductList
             products={data.productEntries}
             splitSettings={data.splitSettings}
+            splitPlans={data.splitPlans}
+            onUpdateProduct={handleUpdateProduct}
             onDeleteProduct={handleDeleteProduct}
           />
         )}

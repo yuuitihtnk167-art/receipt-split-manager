@@ -23,7 +23,7 @@ export function DataManagement({ data, onImportData }: DataManagementProps) {
   function handleExportProductsCsv(): void {
     const filename = `receipt-products-${createTimestamp()}.csv`;
     const csv = createCsv([
-      ["購入日", "店舗名", "商品名", "正式商品名", "金額（税込）", "分類", "入力方法"],
+      ["購入日", "店舗名", "商品名", "正式商品名", "金額（税込）", "分類", "入力方法", "メモ"],
       ...data.productEntries.map((product) => [
         product.purchaseDate,
         product.storeName,
@@ -32,6 +32,7 @@ export function DataManagement({ data, onImportData }: DataManagementProps) {
         String(product.amountWithTax),
         product.category,
         product.inputMethod === "split" ? "分割入力" : "通常入力",
+        product.memo ?? "",
       ]),
     ]);
 

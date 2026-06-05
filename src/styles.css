@@ -170,7 +170,8 @@ h2 {
 }
 
 .card-list,
-.form-stack {
+.form-stack,
+.edit-form {
   display: grid;
   gap: 12px;
 }
@@ -380,6 +381,13 @@ h2 {
   gap: 10px;
 }
 
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
 .file-button {
   display: inline-flex;
   align-items: center;
@@ -486,7 +494,12 @@ h2 {
   }
 
   .data-actions,
+  .inline-actions,
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .inline-actions {
+    display: grid;
   }
 }

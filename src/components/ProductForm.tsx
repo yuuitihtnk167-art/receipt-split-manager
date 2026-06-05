@@ -146,6 +146,15 @@ export function ProductForm({ onSubmit }: ProductFormProps) {
           />
         </label>
 
+        <label className="field">
+          <span>メモ</span>
+          <textarea
+            value={values.splitMemo}
+            onChange={(event) => updateValue("splitMemo", event.target.value)}
+            placeholder="例：生活コスト配分として入力"
+          />
+        </label>
+
         <fieldset className="choice-group">
           <legend>入力方法</legend>
           <label>
@@ -187,15 +196,6 @@ export function ProductForm({ onSubmit }: ProductFormProps) {
                 type="month"
                 value={values.splitStartMonth}
                 onChange={(event) => updateValue("splitStartMonth", event.target.value)}
-              />
-            </label>
-
-            <label className="field">
-              <span>メモ</span>
-              <textarea
-                value={values.splitMemo}
-                onChange={(event) => updateValue("splitMemo", event.target.value)}
-                placeholder="例：生活コスト配分として6ヶ月で入力"
               />
             </label>
 
