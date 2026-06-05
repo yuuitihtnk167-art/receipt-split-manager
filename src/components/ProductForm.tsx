@@ -1,5 +1,5 @@
-import { FormEvent, useMemo, useState } from "react";
-import type { LearningCandidate, ProductFormValues } from "../types";
+import { FormEvent, useState } from "react";
+import type { ProductFormValues } from "../types";
 import { getCurrentMonth, getTodayDate } from "../utils/date";
 import { formatMoney, parseMoney } from "../utils/money";
 
@@ -17,11 +17,10 @@ const defaultValues: ProductFormValues = {
 };
 
 type ProductFormProps = {
-  learningCandidates: LearningCandidate[];
   onSubmit: (values: ProductFormValues) => void;
 };
 
-export function ProductForm({ learningCandidates, onSubmit }: ProductFormProps) {
+export function ProductForm({ onSubmit }: ProductFormProps) {
   const [values, setValues] = useState<ProductFormValues>(defaultValues);
   const [error, setError] = useState("");
   const amount = parseMoney(values.amountWithTax);
@@ -34,30 +33,9 @@ export function ProductForm({ learningCandidates, onSubmit }: ProductFormProps) 
     values.inputMethod === "split" && splitMonths > 0
       ? amount - monthlyPreview * (splitMonths - 1)
       : 0;
-  const matchedCandidates = useMemo(() => {
-    const receiptName = values.receiptItemName.trim();
-
-    if (!receiptName) {
-      return [];
-    }
-
-    return learningCandidates
-      .filter((candidate) => candidate.receiptItemName === receiptName)
-      .sort((a, b) => b.confirmedCount - a.confirmedCount)
-      .slice(0, 3);
-  }, [learningCandidates, values.receiptItemName]);
 
   function updateValue(name: keyof ProductFormValues, value: string): void {
     setValues((current) => ({ ...current, [name]: value }));
-  }
-
-  function applyCandidate(candidate: LearningCandidate): void {
-    setValues((current) => ({
-      ...current,
-      officialItemName: candidate.officialItemName,
-      category: candidate.category,
-      storeName: current.storeName || candidate.storeName,
-    }));
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
@@ -65,7 +43,7 @@ export function ProductForm({ learningCandidates, onSubmit }: ProductFormProps) 
     setError("");
 
     if (!values.purchaseDate || !values.receiptItemName.trim() || !values.officialItemName.trim()) {
-      setError("購入日、レシート上の商品名、正式な商品名を入力してください。");
+      setError("購入日、商品名、正式な商品名を入力してください。");
       return;
     }
 
@@ -128,29 +106,14 @@ export function ProductForm({ learningCandidates, onSubmit }: ProductFormProps) 
         </label>
 
         <label className="field">
-          <span>レシート上の商品名</span>
+          <span>商品名</span>
           <input
             type="text"
             value={values.receiptItemName}
             onChange={(event) => updateValue("receiptItemName", event.target.value)}
-            placeholder="例：PC-ABC123"
+            placeholder="例：ノートパソコン"
           />
         </label>
-
-        {matchedCandidates.length > 0 && (
-          <div className="candidate-box">
-            <p>過去の候補</p>
-            {matchedCandidates.map((candidate) => (
-              <button
-                key={candidate.id}
-                type="button"
-                onClick={() => applyCandidate(candidate)}
-              >
-                {candidate.officialItemName} / {candidate.category}
-              </button>
-            ))}
-          </div>
-        )}
 
         <label className="field">
           <span>正式な商品名</span>

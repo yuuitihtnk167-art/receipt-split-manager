@@ -3,30 +3,24 @@ import { ProductForm } from "./components/ProductForm";
 import { MonthlySummary } from "./components/MonthlySummary";
 import { MonthlyPlans } from "./components/MonthlyPlans";
 import { ProductList } from "./components/ProductList";
-import { LearningDictionary } from "./components/LearningDictionary";
 import { DataManagement } from "./components/DataManagement";
-import { ReceiptReader } from "./components/ReceiptReader";
 import { Tabs } from "./components/Tabs";
 import { emptyAppData, loadAppData, saveAppData } from "./storage";
 import type {
   AppData,
-  LearningCandidate,
   PlanStatus,
   ProductEntry,
   ProductFormValues,
   SplitSetting,
 } from "./types";
-import { getTodayDate } from "./utils/date";
 import { parseMoney } from "./utils/money";
 import { createSplitPlans } from "./utils/split";
 
 const tabs = [
   { id: "today", label: "今月" },
   { id: "input", label: "商品入力" },
-  { id: "receipt", label: "レシート読取" },
   { id: "plans", label: "月別予定" },
   { id: "products", label: "商品一覧" },
-  { id: "dictionary", label: "学習辞書" },
   { id: "data", label: "データ管理" },
 ] as const;
 
@@ -34,7 +28,6 @@ type TabId = (typeof tabs)[number]["id"];
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabId>("today");
-  const [productListMessage, setProductListMessage] = useState("");
   const [data, setData] = useState<AppData>(() => {
     if (typeof localStorage === "undefined") {
       return emptyAppData;
@@ -91,101 +84,13 @@ function App() {
             memo: splitSetting.memo,
           });
 
-    const learningCandidates = upsertLearningCandidate(data.learningCandidates, productEntry);
-
     updateData({
       productEntries: [productEntry, ...data.productEntries],
       splitSettings: splitSetting ? [splitSetting, ...data.splitSettings] : data.splitSettings,
       splitPlans: [...splitPlans, ...data.splitPlans],
-      learningCandidates,
     });
 
     setActiveTab(values.inputMethod === "split" ? "today" : "products");
-    setProductListMessage("");
-  }
-
-  function handleSubmitReceiptItems(valuesList: ProductFormValues[]): void {
-    const now = new Date().toISOString();
-    const productEntries = valuesList
-      .filter((values) => parseMoney(values.amountWithTax) > 0)
-      .map((values) => {
-        const inputMethod: ProductEntry["inputMethod"] =
-          values.inputMethod === "split" && Number(values.splitMonths) >= 2
-            ? "split"
-            : "normal";
-
-        return {
-          id: crypto.randomUUID(),
-          purchaseDate: values.purchaseDate,
-          storeName: values.storeName.trim(),
-          receiptItemName: values.receiptItemName.trim(),
-          officialItemName: values.officialItemName.trim(),
-          amountWithTax: parseMoney(values.amountWithTax),
-          category: values.category.trim(),
-          inputMethod,
-          createdAt: now,
-          updatedAt: now,
-          splitMonths: values.splitMonths,
-          splitStartMonth: values.splitStartMonth,
-          splitMemo: values.splitMemo,
-        };
-      });
-
-    if (productEntries.length === 0) {
-      return;
-    }
-
-    const splitSettings: SplitSetting[] = productEntries
-      .filter((productEntry) => productEntry.inputMethod === "split")
-      .map((productEntry) => ({
-        productEntryId: productEntry.id,
-        months: Number(productEntry.splitMonths),
-        startMonth: productEntry.splitStartMonth,
-        rounding: "last_month_adjust",
-        memo: productEntry.splitMemo.trim(),
-      }));
-
-    const splitPlans = productEntries.flatMap((productEntry) => {
-      if (productEntry.inputMethod !== "split") {
-        return [];
-      }
-
-      return createSplitPlans({
-        productEntryId: productEntry.id,
-        amountWithTax: productEntry.amountWithTax,
-        months: Number(productEntry.splitMonths),
-        startMonth: productEntry.splitStartMonth,
-        memo: productEntry.splitMemo.trim(),
-      });
-    });
-
-    const learningCandidates = productEntries.reduce(
-      (candidates, productEntry) => upsertLearningCandidate(candidates, productEntry),
-      data.learningCandidates,
-    );
-
-    updateData({
-      ...data,
-      productEntries: [
-        ...productEntries.map(
-          ({
-            splitMonths,
-            splitStartMonth,
-            splitMemo,
-            ...productEntry
-          }) => productEntry,
-        ),
-        ...data.productEntries,
-      ],
-      splitSettings: [...splitSettings, ...data.splitSettings],
-      splitPlans: [...splitPlans, ...data.splitPlans],
-      learningCandidates,
-    });
-
-    setProductListMessage(
-      `レシート読取から${productEntries.length}件を登録しました。分割入力は月別予定にも反映されています。`,
-    );
-    setActiveTab("products");
   }
 
   function handleTogglePlanStatus(planId: string, status: PlanStatus): void {
@@ -203,15 +108,6 @@ function App() {
       productEntries: data.productEntries.filter((product) => product.id !== productId),
       splitSettings: data.splitSettings.filter((setting) => setting.productEntryId !== productId),
       splitPlans: data.splitPlans.filter((plan) => plan.productEntryId !== productId),
-    });
-  }
-
-  function handleDeleteLearningCandidate(candidateId: string): void {
-    updateData({
-      ...data,
-      learningCandidates: data.learningCandidates.filter(
-        (candidate) => candidate.id !== candidateId,
-      ),
     });
   }
 
@@ -241,17 +137,7 @@ function App() {
         )}
 
         {activeTab === "input" && (
-          <ProductForm
-            learningCandidates={data.learningCandidates}
-            onSubmit={handleSubmitProduct}
-          />
-        )}
-
-        {activeTab === "receipt" && (
-          <ReceiptReader
-            learningCandidates={data.learningCandidates}
-            onRegisterItems={handleSubmitReceiptItems}
-          />
+          <ProductForm onSubmit={handleSubmitProduct} />
         )}
 
         {activeTab === "plans" && (
@@ -267,14 +153,6 @@ function App() {
             products={data.productEntries}
             splitSettings={data.splitSettings}
             onDeleteProduct={handleDeleteProduct}
-            notice={productListMessage}
-          />
-        )}
-
-        {activeTab === "dictionary" && (
-          <LearningDictionary
-            candidates={data.learningCandidates}
-            onDelete={handleDeleteLearningCandidate}
           />
         )}
 
@@ -284,68 +162,6 @@ function App() {
       </main>
     </div>
   );
-}
-
-function upsertLearningCandidate(
-  candidates: LearningCandidate[],
-  productEntry: ProductEntry,
-): LearningCandidate[] {
-  const today = getTodayDate();
-  const existing = candidates.find(
-    (candidate) =>
-      candidate.receiptItemName === productEntry.receiptItemName &&
-      candidate.officialItemName === productEntry.officialItemName &&
-      candidate.category === productEntry.category &&
-      candidate.storeName === productEntry.storeName,
-  );
-
-  if (!existing) {
-    const priceBand = createPriceBand(productEntry.amountWithTax);
-
-    return [
-      {
-        id: crypto.randomUUID(),
-        receiptItemName: productEntry.receiptItemName,
-        officialItemName: productEntry.officialItemName,
-        category: productEntry.category,
-        storeName: productEntry.storeName,
-        priceMin: priceBand.min,
-        priceMax: priceBand.max,
-        confirmedCount: 1,
-        lastUsedDate: today,
-      },
-      ...candidates,
-    ];
-  }
-
-  return candidates.map((candidate) => {
-    if (candidate.id !== existing.id) {
-      return candidate;
-    }
-
-    return {
-      ...candidate,
-      priceMin: Math.min(candidate.priceMin, productEntry.amountWithTax),
-      priceMax: Math.max(candidate.priceMax, productEntry.amountWithTax),
-      confirmedCount: candidate.confirmedCount + 1,
-      lastUsedDate: today,
-    };
-  });
-}
-
-function createPriceBand(amount: number): { min: number; max: number } {
-  if (amount < 1000) {
-    return { min: 0, max: 999 };
-  }
-
-  if (amount < 10000) {
-    return { min: Math.floor(amount / 1000) * 1000, max: Math.floor(amount / 1000) * 1000 + 999 };
-  }
-
-  return {
-    min: Math.floor(amount / 10000) * 10000,
-    max: Math.floor(amount / 10000) * 10000 + 9999,
-  };
 }
 
 export default App;

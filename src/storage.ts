@@ -6,7 +6,6 @@ export const emptyAppData: AppData = {
   productEntries: [],
   splitSettings: [],
   splitPlans: [],
-  learningCandidates: [],
 };
 
 export function loadAppData(): AppData {
@@ -23,9 +22,6 @@ export function loadAppData(): AppData {
       productEntries: Array.isArray(parsed.productEntries) ? parsed.productEntries : [],
       splitSettings: Array.isArray(parsed.splitSettings) ? parsed.splitSettings : [],
       splitPlans: Array.isArray(parsed.splitPlans) ? parsed.splitPlans : [],
-      learningCandidates: Array.isArray(parsed.learningCandidates)
-        ? parsed.learningCandidates
-        : [],
     };
   } catch {
     return emptyAppData;

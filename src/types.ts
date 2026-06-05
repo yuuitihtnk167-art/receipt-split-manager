@@ -32,23 +32,10 @@ export type SplitPlan = {
   memo: string;
 };
 
-export type LearningCandidate = {
-  id: string;
-  receiptItemName: string;
-  officialItemName: string;
-  category: string;
-  storeName: string;
-  priceMin: number;
-  priceMax: number;
-  confirmedCount: number;
-  lastUsedDate: string;
-};
-
 export type AppData = {
   productEntries: ProductEntry[];
   splitSettings: SplitSetting[];
   splitPlans: SplitPlan[];
-  learningCandidates: LearningCandidate[];
 };
 
 export type ProductFormValues = {

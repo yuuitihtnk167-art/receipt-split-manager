@@ -66,7 +66,7 @@ export function ProductList({
                     <dd>{product.inputMethod === "split" ? "分割入力" : "通常入力"}</dd>
                   </div>
                   <div>
-                    <dt>レシート表記</dt>
+                    <dt>商品名</dt>
                     <dd>{product.receiptItemName}</dd>
                   </div>
                   {setting && (

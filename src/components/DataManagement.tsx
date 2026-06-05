@@ -11,7 +11,6 @@ export function DataManagement({ data, onImportData }: DataManagementProps) {
   const [message, setMessage] = useState("");
   const totalPlans = data.splitPlans.length;
   const totalProducts = data.productEntries.length;
-  const totalCandidates = data.learningCandidates.length;
 
   function handleExport(): void {
     const filename = `receipt-split-manager-backup-${createTimestamp()}.json`;
@@ -24,7 +23,7 @@ export function DataManagement({ data, onImportData }: DataManagementProps) {
   function handleExportProductsCsv(): void {
     const filename = `receipt-products-${createTimestamp()}.csv`;
     const csv = createCsv([
-      ["購入日", "店舗名", "レシート上の商品名", "正式商品名", "金額（税込）", "分類", "入力方法"],
+      ["購入日", "店舗名", "商品名", "正式商品名", "金額（税込）", "分類", "入力方法"],
       ...data.productEntries.map((product) => [
         product.purchaseDate,
         product.storeName,
@@ -118,10 +117,6 @@ export function DataManagement({ data, onImportData }: DataManagementProps) {
           <strong>{totalPlans}件</strong>
         </div>
         <div>
-          <span>学習辞書</span>
-          <strong>{totalCandidates}件</strong>
-        </div>
-        <div>
           <span>分割設定</span>
           <strong>{data.splitSettings.length}件</strong>
         </div>
@@ -131,7 +126,7 @@ export function DataManagement({ data, onImportData }: DataManagementProps) {
         <div>
           <p className="item-title">JSONバックアップ</p>
           <p className="item-subtitle">
-            商品データ、分割設定、分割予定、学習辞書をまとめて保存します。
+            商品データ、分割設定、分割予定をまとめて保存します。
           </p>
         </div>
         <div className="data-actions">
@@ -221,8 +216,7 @@ function normalizeImportedData(value: unknown): AppData | null {
   if (
     !Array.isArray(maybeData.productEntries) ||
     !Array.isArray(maybeData.splitSettings) ||
-    !Array.isArray(maybeData.splitPlans) ||
-    !Array.isArray(maybeData.learningCandidates)
+    !Array.isArray(maybeData.splitPlans)
   ) {
     return null;
   }
@@ -231,7 +225,6 @@ function normalizeImportedData(value: unknown): AppData | null {
     productEntries: maybeData.productEntries,
     splitSettings: maybeData.splitSettings,
     splitPlans: maybeData.splitPlans,
-    learningCandidates: maybeData.learningCandidates,
   } as AppData;
 }
 
