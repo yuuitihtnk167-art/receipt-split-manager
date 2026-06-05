@@ -1,0 +1,24 @@
+{
+  "name": "receipt-split-manager",
+  "short_name": "Receipt Split",
+  "description": "レシートの商品項目と分割入力予定を管理する家計簿補助アプリ",
+  "start_url": "/receipt-split-manager/",
+  "scope": "/receipt-split-manager/",
+  "display": "standalone",
+  "background_color": "#f6f7f4",
+  "theme_color": "#31634f",
+  "icons": [
+    {
+      "src": "/receipt-split-manager/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/receipt-split-manager/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

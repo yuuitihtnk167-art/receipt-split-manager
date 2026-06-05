@@ -32,6 +32,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 .app-shell {
   width: min(100%, 920px);
   min-height: 100vh;
@@ -398,6 +403,12 @@ h2 {
   gap: 10px;
 }
 
+.image-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .file-button {
   display: inline-flex;
   align-items: center;
@@ -406,6 +417,11 @@ h2 {
   border: 1px solid #cfd7d2;
   background: #ffffff;
   color: #2b4138;
+}
+
+.file-button.disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 .file-button input {
@@ -498,7 +514,8 @@ h2 {
     width: 100%;
   }
 
-  .data-actions {
+  .data-actions,
+  .image-actions {
     grid-template-columns: 1fr;
   }
 }

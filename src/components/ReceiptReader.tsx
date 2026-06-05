@@ -1,4 +1,6 @@
+import type { ChangeEvent } from "react";
 import { useMemo, useState } from "react";
+import Tesseract from "tesseract.js";
 import type { LearningCandidate, ProductFormValues } from "../types";
 import { getTodayDate } from "../utils/date";
 import { parseMoney } from "../utils/money";
@@ -28,6 +30,8 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
   const [text, setText] = useState("");
   const [candidates, setCandidates] = useState<ReceiptCandidate[]>([]);
   const [message, setMessage] = useState("");
+  const [isReadingImages, setIsReadingImages] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState("");
   const selectedCandidates = useMemo(
     () =>
       candidates.filter(
@@ -50,6 +54,44 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
 
     setCandidates(nextCandidates);
     setMessage(`${nextCandidates.length}件の候補を作成しました。`);
+  }
+
+  async function handleImageInput(event: ChangeEvent<HTMLInputElement>): Promise<void> {
+    const selectedFiles = Array.from(event.target.files ?? []);
+    event.target.value = "";
+
+    if (selectedFiles.length === 0) {
+      return;
+    }
+
+    setIsReadingImages(true);
+    setCandidates([]);
+    setMessage("");
+
+    try {
+      const imageTexts: string[] = [];
+
+      for (const [index, file] of selectedFiles.entries()) {
+        setOcrProgress(`${index + 1}/${selectedFiles.length}枚目を読み取り中`);
+        const result = await Tesseract.recognize(file, "jpn+eng");
+        const recognizedText = result.data.text.trim();
+
+        if (recognizedText) {
+          imageTexts.push(recognizedText);
+        }
+      }
+
+      setText(imageTexts.join("\n"));
+      setMessage(
+        `${selectedFiles.length}枚の画像を読み取りました。必要に応じて手修正してから分解してください。`,
+      );
+    } catch (error) {
+      console.error(error);
+      setMessage("OCR読み取りに失敗しました。画像を確認して、もう一度試してください。");
+    } finally {
+      setIsReadingImages(false);
+      setOcrProgress("");
+    }
   }
 
   function updateCandidate(
@@ -113,8 +155,43 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
           />
         </label>
 
+        <div className="field">
+          <span>画像から読み取り</span>
+          <div className="image-actions">
+            <label className={`file-button${isReadingImages ? " disabled" : ""}`}>
+              カメラで撮影
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                disabled={isReadingImages}
+                onChange={handleImageInput}
+              />
+            </label>
+            <label className={`file-button${isReadingImages ? " disabled" : ""}`}>
+              画像を選択
+              <input
+                type="file"
+                accept="image/*"
+                disabled={isReadingImages}
+                onChange={handleImageInput}
+              />
+            </label>
+            <label className={`file-button${isReadingImages ? " disabled" : ""}`}>
+              複数画像を選択
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={isReadingImages}
+                onChange={handleImageInput}
+              />
+            </label>
+          </div>
+        </div>
+
         <label className="field">
-          <span>OCR結果の貼り付け</span>
+          <span>OCR結果の貼り付け・修正</span>
           <textarea
             value={text}
             onChange={(event) => setText(event.target.value)}
@@ -122,11 +199,17 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
           />
         </label>
 
-        <button type="button" className="primary-button" onClick={handleParse}>
+        <button
+          type="button"
+          className="primary-button"
+          onClick={handleParse}
+          disabled={isReadingImages}
+        >
           1行ごとに分解
         </button>
       </div>
 
+      {isReadingImages && <p className="info-message">{ocrProgress || "読み取り中"}</p>}
       {message && <p className="info-message">{message}</p>}
 
       {candidates.length > 0 && (
@@ -248,7 +331,7 @@ export function ReceiptReader({ learningCandidates, onRegisterItems }: ReceiptRe
       )}
 
       <p className="empty-message">
-        カメラ撮影やOCR本体はまだ実装していません。将来のOCR結果を想定して、テキストを貼り付けて確認できます。
+        画像の自動合成、重複行の自動削除、独自カメラUIはまだ実装していません。読み取り結果は手修正できます。
       </p>
     </section>
   );
