@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const LONG_PRESS_DURATION = 800;
-const MOVE_CANCEL_THRESHOLD = 12;
+const MOVE_CANCEL_THRESHOLD = 10;
 
 type LongPressButtonProps = {
   className: string;
@@ -82,18 +82,16 @@ export function LongPressButton({
 
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
-      longPressCompletedRef.current = true;
-      setIsPressing(false);
 
-      const button = buttonRef.current;
-      const pointerId = activePointerIdRef.current;
-
-      if (button && pointerId !== null) {
-        releasePointerCapture(button, pointerId);
+      if (
+        activePointerIdRef.current !== event.pointerId ||
+        longPressCompletedRef.current
+      ) {
+        return;
       }
 
-      activePointerIdRef.current = null;
-      startPositionRef.current = null;
+      longPressCompletedRef.current = true;
+      setIsPressing(false);
       onLongPress();
     }, LONG_PRESS_DURATION);
   }
@@ -125,7 +123,8 @@ export function LongPressButton({
       return;
     }
 
-    cancelPress(event.currentTarget, event.pointerId);
+    releasePointerCapture(event.currentTarget, event.pointerId);
+    resetPress();
   }
 
   function handlePointerCancel(
