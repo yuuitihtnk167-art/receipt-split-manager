@@ -260,7 +260,6 @@ function App() {
           <DataManagement
             data={data}
             onImportData={handleImportData}
-            onUpdateCategories={handleUpdateCategories}
           />
         )}
       </main>

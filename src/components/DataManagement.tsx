@@ -1,16 +1,14 @@
 import { ChangeEvent, useRef, useState } from "react";
 import { defaultCategories } from "../categories";
-import { CategoryManager } from "./CategoryManager";
 import type { AppData } from "../types";
 import type { CategoryGroup } from "../types";
 
 type DataManagementProps = {
   data: AppData;
   onImportData: (data: AppData) => void;
-  onUpdateCategories: (categories: CategoryGroup[]) => void;
 };
 
-export function DataManagement({ data, onImportData, onUpdateCategories }: DataManagementProps) {
+export function DataManagement({ data, onImportData }: DataManagementProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [message, setMessage] = useState("");
   const totalPlans = data.splitPlans.length;
@@ -173,8 +171,6 @@ export function DataManagement({ data, onImportData, onUpdateCategories }: DataM
           </button>
         </div>
       </article>
-
-      <CategoryManager categories={data.categories} onChange={onUpdateCategories} />
 
       <p className="empty-message">
         データはこのブラウザのlocalStorageに保存されています。ブラウザ変更やキャッシュ削除に備えて、定期的にバックアップしてください。
