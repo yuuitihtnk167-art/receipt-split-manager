@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
-const LONG_PRESS_MS = 800;
-const MOVE_CANCEL_PX = 10;
+const LONG_PRESS_DURATION = 800;
+const MOVE_CANCEL_THRESHOLD = 12;
 
 type LongPressButtonProps = {
   className: string;
@@ -18,11 +18,9 @@ export function LongPressButton({
 }: LongPressButtonProps) {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const timerRef = useRef<number | null>(null);
-  const pointerIdRef = useRef<number | null>(null);
-  const startXRef = useRef(0);
-  const startYRef = useRef(0);
+  const activePointerIdRef = useRef<number | null>(null);
+  const startPositionRef = useRef<{ x: number; y: number } | null>(null);
   const longPressCompletedRef = useRef(false);
-  const ignoreNextClickRef = useRef(false);
   const [isPressing, setIsPressing] = useState(false);
 
   function clearTimer(): void {
@@ -30,6 +28,14 @@ export function LongPressButton({
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+  }
+
+  function resetPress(): void {
+    clearTimer();
+    activePointerIdRef.current = null;
+    startPositionRef.current = null;
+    longPressCompletedRef.current = false;
+    setIsPressing(false);
   }
 
   function releasePointerCapture(
@@ -41,89 +47,73 @@ export function LongPressButton({
         button.releasePointerCapture(pointerId);
       }
     } catch {
-      // The browser may release capture before pointercancel is delivered.
+      // The browser may already have released capture after a cancelled gesture.
     }
   }
 
-  function finishPress(
-    button: HTMLButtonElement,
-    pointerId: number,
-  ): void {
-    clearTimer();
+  function cancelPress(button: HTMLButtonElement, pointerId: number): void {
     releasePointerCapture(button, pointerId);
-    pointerIdRef.current = null;
-    longPressCompletedRef.current = false;
-    setIsPressing(false);
-  }
-
-  function cancelPress(
-    button: HTMLButtonElement,
-    pointerId: number,
-  ): void {
-    longPressCompletedRef.current = false;
-    ignoreNextClickRef.current = false;
-    finishPress(button, pointerId);
+    resetPress();
   }
 
   function handlePointerDown(
     event: React.PointerEvent<HTMLButtonElement>,
   ): void {
-    const isPrimaryMouseButton =
-      event.pointerType !== "mouse" || event.button === 0;
-
     if (
       !event.isPrimary ||
-      !isPrimaryMouseButton ||
-      pointerIdRef.current !== null
+      event.button !== 0 ||
+      activePointerIdRef.current !== null
     ) {
       return;
     }
 
     clearTimer();
-    pointerIdRef.current = event.pointerId;
-    startXRef.current = event.clientX;
-    startYRef.current = event.clientY;
+    event.preventDefault();
+    activePointerIdRef.current = event.pointerId;
+    startPositionRef.current = { x: event.clientX, y: event.clientY };
     longPressCompletedRef.current = false;
-    ignoreNextClickRef.current = false;
     setIsPressing(true);
 
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
-      // Keep the timer active on browsers that cannot capture this pointer.
+      // Continue with the timer when pointer capture is unavailable.
     }
 
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
+      longPressCompletedRef.current = true;
+      setIsPressing(false);
 
-      if (
-        pointerIdRef.current !== event.pointerId ||
-        longPressCompletedRef.current
-      ) {
-        return;
+      const button = buttonRef.current;
+      const pointerId = activePointerIdRef.current;
+
+      if (button && pointerId !== null) {
+        releasePointerCapture(button, pointerId);
       }
 
-      longPressCompletedRef.current = true;
-      ignoreNextClickRef.current = true;
-    }, LONG_PRESS_MS);
+      activePointerIdRef.current = null;
+      startPositionRef.current = null;
+      onLongPress();
+    }, LONG_PRESS_DURATION);
   }
 
   function handlePointerMove(
     event: React.PointerEvent<HTMLButtonElement>,
   ): void {
     if (
-      event.pointerId !== pointerIdRef.current ||
+      event.pointerId !== activePointerIdRef.current ||
+      startPositionRef.current === null ||
       longPressCompletedRef.current
     ) {
       return;
     }
 
-    const distance = Math.hypot(
-      event.clientX - startXRef.current,
-      event.clientY - startYRef.current,
-    );
+    const horizontalDistance = event.clientX - startPositionRef.current.x;
+    const verticalDistance = event.clientY - startPositionRef.current.y;
+    const distance = Math.hypot(horizontalDistance, verticalDistance);
 
-    if (distance > MOVE_CANCEL_PX) {
+    if (distance > MOVE_CANCEL_THRESHOLD) {
       cancelPress(event.currentTarget, event.pointerId);
     }
   }
@@ -131,27 +121,17 @@ export function LongPressButton({
   function handlePointerUp(
     event: React.PointerEvent<HTMLButtonElement>,
   ): void {
-    if (event.pointerId !== pointerIdRef.current) {
+    if (event.pointerId !== activePointerIdRef.current) {
       return;
     }
 
-    const shouldRunLongPress = longPressCompletedRef.current;
-
-    if (shouldRunLongPress) {
-      event.preventDefault();
-    }
-
-    finishPress(event.currentTarget, event.pointerId);
-
-    if (shouldRunLongPress) {
-      onLongPress();
-    }
+    cancelPress(event.currentTarget, event.pointerId);
   }
 
   function handlePointerCancel(
     event: React.PointerEvent<HTMLButtonElement>,
   ): void {
-    if (event.pointerId !== pointerIdRef.current) {
+    if (event.pointerId !== activePointerIdRef.current) {
       return;
     }
 
@@ -163,7 +143,7 @@ export function LongPressButton({
       clearTimer();
 
       const button = buttonRef.current;
-      const pointerId = pointerIdRef.current;
+      const pointerId = activePointerIdRef.current;
 
       if (button && pointerId !== null) {
         releasePointerCapture(button, pointerId);
@@ -183,12 +163,8 @@ export function LongPressButton({
       onContextMenu={(event) => event.preventDefault()}
       onDragStart={(event) => event.preventDefault()}
       onClick={(event) => {
-        if (!ignoreNextClickRef.current) {
-          return;
-        }
-
-        ignoreNextClickRef.current = false;
         event.preventDefault();
+        event.stopPropagation();
       }}
     >
       {isPressing ? pressingLabel : label}
