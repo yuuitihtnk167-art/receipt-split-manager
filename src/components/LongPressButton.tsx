@@ -42,8 +42,12 @@ export function LongPressButton({
     button: HTMLButtonElement,
     pointerId: number,
   ): void {
-    if (button.hasPointerCapture(pointerId)) {
-      button.releasePointerCapture(pointerId);
+    try {
+      if (button.hasPointerCapture(pointerId)) {
+        button.releasePointerCapture(pointerId);
+      }
+    } catch {
+      // The browser may already have released capture after a cancelled gesture.
     }
   }
 
@@ -64,12 +68,17 @@ export function LongPressButton({
     }
 
     clearTimer();
+    event.preventDefault();
     activePointerIdRef.current = event.pointerId;
     startPositionRef.current = { x: event.clientX, y: event.clientY };
     longPressCompletedRef.current = false;
     setIsPressing(true);
 
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Continue with the timer when pointer capture is unavailable.
+    }
 
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
@@ -152,6 +161,7 @@ export function LongPressButton({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
       onContextMenu={(event) => event.preventDefault()}
+      onDragStart={(event) => event.preventDefault()}
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
