@@ -226,7 +226,7 @@ export function ProductForm({
             <span>端数</span>
             <strong>{formatMoney(remainder)}</strong>
           </div>
-          <small>端数は最終月の入力額に加算します。</small>
+          <small>端数は最初の入力額に加算します。</small>
         </div>
 
         {error && <p className="error-message">{error}</p>}
