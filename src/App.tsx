@@ -5,7 +5,12 @@ import { MonthlyPlans } from "./components/MonthlyPlans";
 import { ProductList } from "./components/ProductList";
 import { DataManagement } from "./components/DataManagement";
 import { Tabs } from "./components/Tabs";
-import { emptyAppData, loadAppData, saveAppData } from "./storage";
+import {
+  emptyAppData,
+  loadAppData,
+  migrateAppData,
+  saveAppData,
+} from "./storage";
 import type {
   AppData,
   PlanStatus,
@@ -88,6 +93,7 @@ function App() {
       splitSettings: [splitSetting, ...data.splitSettings],
       splitPlans: [...splitPlans, ...data.splitPlans],
       categories: data.categories,
+      migrationVersion: data.migrationVersion,
     });
 
     setActiveTab("today");
@@ -189,11 +195,12 @@ function App() {
         ...data.splitPlans.filter((plan) => plan.productEntryId !== productId),
       ],
       categories: data.categories,
+      migrationVersion: data.migrationVersion,
     });
   }
 
   function handleImportData(importedData: AppData): void {
-    updateData(importedData);
+    updateData(migrateAppData(importedData));
   }
 
   function handleUpdateCategories(categories: AppData["categories"]): void {

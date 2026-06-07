@@ -238,6 +238,10 @@ function normalizeImportedData(value: unknown): AppData | null {
       Array.isArray(maybeData.categories) && maybeData.categories.length > 0
         ? (maybeData.categories as CategoryGroup[])
         : defaultCategories,
+    migrationVersion:
+      typeof maybeData.migrationVersion === "number"
+        ? maybeData.migrationVersion
+        : undefined,
   } as AppData;
 }
 

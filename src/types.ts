@@ -52,6 +52,7 @@ export type AppData = {
   splitSettings: SplitSetting[];
   splitPlans: SplitPlan[];
   categories: CategoryGroup[];
+  migrationVersion?: number;
 };
 
 export type ProductFormValues = {
