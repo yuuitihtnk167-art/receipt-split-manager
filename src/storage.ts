@@ -3,7 +3,7 @@ import { defaultCategories } from "./categories";
 import { getCurrentMonth } from "./utils/date";
 
 const STORAGE_KEY = "receipt-split-manager:v1";
-const CURRENT_MIGRATION_VERSION = 1;
+const CURRENT_MIGRATION_VERSION = 2;
 
 export const emptyAppData: AppData = {
   productEntries: [],
@@ -59,17 +59,36 @@ export function migrateAppData(
   data: AppData,
   currentMonth = getCurrentMonth(),
 ): AppData {
-  if ((data.migrationVersion ?? 0) >= CURRENT_MIGRATION_VERSION) {
+  const migrationVersion = data.migrationVersion ?? 0;
+
+  if (migrationVersion >= CURRENT_MIGRATION_VERSION) {
     return data;
   }
 
   return {
     ...data,
-    splitPlans: data.splitPlans.map((plan) =>
-      plan.targetMonth < currentMonth && plan.status !== "done"
-        ? { ...plan, status: "done" as const }
-        : plan,
-    ),
+    splitPlans: data.splitPlans.map((plan) => {
+      const isPastMonth = plan.targetMonth < currentMonth;
+      const shouldMigrateStatus =
+        migrationVersion < 1 && isPastMonth && plan.status !== "done";
+      const shouldMigrateRemainderStatus =
+        migrationVersion < 2 &&
+        isPastMonth &&
+        plan.remainderStatus !== undefined &&
+        plan.remainderStatus !== "done";
+
+      if (!shouldMigrateStatus && !shouldMigrateRemainderStatus) {
+        return plan;
+      }
+
+      return {
+        ...plan,
+        status: shouldMigrateStatus ? ("done" as const) : plan.status,
+        remainderStatus: shouldMigrateRemainderStatus
+          ? ("done" as const)
+          : plan.remainderStatus,
+      };
+    }),
     migrationVersion: CURRENT_MIGRATION_VERSION,
   };
 }
