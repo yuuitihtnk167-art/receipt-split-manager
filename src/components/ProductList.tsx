@@ -135,11 +135,6 @@ export function ProductList({
       return;
     }
 
-    if (!editValues.splitMemo.trim()) {
-      setEditError("メモを入力してください。");
-      return;
-    }
-
     const confirmed = window.confirm(
       "分割予定を再計算します。入力済みの月は入力済みのまま保持します。よろしいですか？",
     );

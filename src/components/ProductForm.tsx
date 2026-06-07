@@ -99,11 +99,6 @@ export function ProductForm({
       return;
     }
 
-    if (!values.splitMemo.trim()) {
-      setError("メモを入力してください。");
-      return;
-    }
-
     onSubmit({
       ...values,
       officialItemName: values.receiptItemName.trim(),
