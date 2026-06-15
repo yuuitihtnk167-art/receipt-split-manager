@@ -1,4 +1,9 @@
 import { ChangeEvent, useRef, useState } from "react";
+import {
+  createBackupFilename,
+  loadLastBackupFilename,
+  saveLastBackupFilename,
+} from "../backupHistory";
 import { normalizeImportedAppData } from "../storage";
 import type { AppData } from "../types";
 import {
@@ -20,6 +25,13 @@ export function DataManagement({
 }: DataManagementProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [message, setMessage] = useState("");
+  const [isBackupHelpOpen, setIsBackupHelpOpen] = useState(false);
+  const [pendingImportData, setPendingImportData] = useState<AppData | null>(
+    null,
+  );
+  const [lastBackupFilename, setLastBackupFilename] = useState<string | null>(
+    () => loadLastBackupFilename(),
+  );
   const totalPlans = data.splitPlans.length;
   const totalProducts = data.productEntries.length;
   const totalCategories = data.categories.length;
@@ -36,9 +48,15 @@ export function DataManagement({
   }
 
   function handleExport(): void {
-    const filename = `expense-split-manager-backup-${createTimestamp()}.json`;
+    const filename = createBackupFilename();
     const json = JSON.stringify(data, null, 2);
 
+    setLastBackupFilename(filename);
+    try {
+      saveLastBackupFilename(filename);
+    } catch {
+      // The download should continue even when browser storage is unavailable.
+    }
     downloadFile(filename, json, "application/json");
     setMessage(`${filename} を作成しました。`);
   }
@@ -60,17 +78,7 @@ export function DataManagement({
         return;
       }
 
-      const confirmed = window.confirm(
-        "現在のデータを、選択したバックアップ内容で上書きします。よろしいですか？",
-      );
-
-      if (!confirmed) {
-        setMessage("インポートをキャンセルしました。");
-        return;
-      }
-
-      onImportData(importedData);
-      setMessage("バックアップから復元しました。");
+      setPendingImportData(importedData);
     } catch {
       setMessage("JSONファイルの読み込みに失敗しました。");
     } finally {
@@ -78,6 +86,21 @@ export function DataManagement({
         fileInputRef.current.value = "";
       }
     }
+  }
+
+  function confirmImport(): void {
+    if (!pendingImportData) {
+      return;
+    }
+
+    onImportData(pendingImportData);
+    setPendingImportData(null);
+    setMessage("バックアップから復元しました。");
+  }
+
+  function cancelImport(): void {
+    setPendingImportData(null);
+    setMessage("インポートをキャンセルしました。");
   }
 
   return (
@@ -136,11 +159,15 @@ export function DataManagement({
       </div>
 
       <article className="item-card">
-        <div>
+        <div className="backup-heading">
           <p className="item-title">JSONバックアップ</p>
-          <p className="item-subtitle">
-            登録した商品、分割予定、入力済み状態、カテゴリ情報、締め日設定をJSON形式でバックアップできます。機種変更やデータ復元の際に使用してください。
-          </p>
+          <button
+            type="button"
+            className="secondary-button backup-help-button"
+            onClick={() => setIsBackupHelpOpen(true)}
+          >
+            ヘルプ
+          </button>
         </div>
         <div className="data-actions">
           <button type="button" className="primary-button" onClick={handleExport}>
@@ -159,19 +186,76 @@ export function DataManagement({
         {message && <p className="info-message">{message}</p>}
       </article>
 
+      {isBackupHelpOpen && (
+        <div className="dialog-backdrop">
+          <section
+            className="edit-dialog backup-help-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="backup-help-title"
+          >
+            <div className="dialog-heading">
+              <h3 id="backup-help-title">JSONバックアップについて</h3>
+            </div>
+            <p>
+              登録した商品、分割予定、入力済み状態、カテゴリ情報、締め日設定をJSON形式でバックアップできます。機種変更やデータ復元の際に使用してください。
+            </p>
+            <BackupFilename filename={lastBackupFilename} />
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => setIsBackupHelpOpen(false)}
+            >
+              閉じる
+            </button>
+          </section>
+        </div>
+      )}
+
+      {pendingImportData && (
+        <div className="dialog-backdrop">
+          <section
+            className="edit-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="import-confirm-title"
+          >
+            <div className="dialog-heading">
+              <h3 id="import-confirm-title">バックアップから復元</h3>
+            </div>
+            <p>
+              現在のデータを、選択したバックアップ内容で上書きします。よろしいですか？
+            </p>
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={cancelImport}
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={confirmImport}
+              >
+                復元
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </section>
   );
 }
 
-function createTimestamp(): string {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hour = String(date.getHours()).padStart(2, "0");
-  const minute = String(date.getMinutes()).padStart(2, "0");
-
-  return `${year}${month}${day}-${hour}${minute}`;
+function BackupFilename({ filename }: { filename: string | null }) {
+  return (
+    <div className="backup-filename">
+      <span>前回保存したファイル：</span>
+      <strong>{filename ?? "なし"}</strong>
+    </div>
+  );
 }
 
 function downloadFile(filename: string, content: string, type: string): void {

@@ -496,6 +496,47 @@ main {
   gap: 10px;
 }
 
+.backup-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.backup-help-button {
+  min-height: 40px;
+  padding: 6px 12px;
+}
+
+.backup-filename {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfaf8;
+}
+
+.backup-filename span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.backup-filename strong {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.backup-help-dialog {
+  width: min(100%, 480px);
+}
+
+.backup-help-dialog > .primary-button {
+  width: 100%;
+}
+
 .closing-day-field {
   max-width: 240px;
 }
