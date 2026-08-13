@@ -5,7 +5,7 @@
       "type": "chrome",
       "request": "launch",
       "name": "Launch app",
-      "url": "http://localhost:5173/receipt-split-manager/",
+      "url": "http://localhost:5173/expense-split-manager/",
       "webRoot": "${workspaceFolder}",
       "preLaunchTask": "Start Vite dev server"
     }

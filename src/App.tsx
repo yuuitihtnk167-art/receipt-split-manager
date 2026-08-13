@@ -233,7 +233,7 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <div>
-          <h1>Receipt Split Manager</h1>
+          <h1>Expense Split Manager</h1>
         </div>
         <p className="storage-note">この端末のブラウザに保存されます</p>
       </header>
