@@ -1,21 +1,22 @@
 {
-  "name": "Receipt Split Manager",
-  "short_name": "Receipt Split Manager",
-  "description": "マネーフォワードへ高額支出を分割入力するためのReceipt Split Manager",
-  "start_url": "/receipt-split-manager/",
-  "scope": "/receipt-split-manager/",
+  "name": "Expense Split Manager",
+  "short_name": "Expense Split Manager",
+  "description": "マネーフォワードへ高額支出を分割入力するためのExpense Split Manager",
+  "id": "/receipt-split-manager/",
+  "start_url": "/expense-split-manager/",
+  "scope": "/expense-split-manager/",
   "display": "standalone",
   "background_color": "#f6f7f4",
   "theme_color": "#31634f",
   "icons": [
     {
-      "src": "/receipt-split-manager/icons/icon-192.png",
+      "src": "/expense-split-manager/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/receipt-split-manager/icons/icon-512.png",
+      "src": "/expense-split-manager/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

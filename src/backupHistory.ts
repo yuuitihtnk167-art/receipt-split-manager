@@ -39,5 +39,5 @@ export function createBackupFilename(date = new Date()): string {
   const minute = String(date.getMinutes()).padStart(2, "0");
   const second = String(date.getSeconds()).padStart(2, "0");
 
-  return `receipt-split-manager-backup-${year}-${month}-${day}T${hour}-${minute}-${second}.json`;
+  return `expense-split-manager-backup-${year}-${month}-${day}T${hour}-${minute}-${second}.json`;
 }

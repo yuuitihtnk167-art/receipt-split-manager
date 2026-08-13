@@ -12,7 +12,7 @@ afterEach(() => {
 describe("backup history", () => {
   it("creates a filename with seconds", () => {
     expect(createBackupFilename(new Date(2026, 5, 15, 12, 34, 56))).toBe(
-      "receipt-split-manager-backup-2026-06-15T12-34-56.json",
+      "expense-split-manager-backup-2026-06-15T12-34-56.json",
     );
   });
 

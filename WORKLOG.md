@@ -2,12 +2,13 @@
 
 ## 1. アプリ名
 
-- アプリ名: Receipt Split Manager
-- パッケージ名: receipt-split-manager
+- 日本語名: 家計簿分割入力支援アプリ
+- 英語名: Expense Split Manager
+- パッケージ名: expense-split-manager
 
 ## 2. GitHubリポジトリURL
 
-https://github.com/yuuitihtnk167-art/receipt-split-manager
+https://github.com/yuuitihtnk167-art/expense-split-manager
 
 ## 3. ローカル作業フォルダ
 
@@ -15,14 +16,14 @@ https://github.com/yuuitihtnk167-art/receipt-split-manager
 C:\GitHub\money\receipt-split-manager
 ```
 
-ローカルフォルダ名も `receipt-split-manager` に統一しています。
+ローカルフォルダ名は作業環境保護のため `receipt-split-manager` のままです。Git履歴やアプリ動作には影響しません。
 
 ## 4. 現在実装済みの機能
 
 - Vite + React + TypeScript のWebアプリ構成
 - GitHub Pages / PWA用設定
-  - 公開パス: `/receipt-split-manager/`
-  - 公開URL: `https://yuuitihtnk167-art.github.io/receipt-split-manager/`
+  - 公開パス: `/expense-split-manager/`
+  - 公開URL: `https://yuuitihtnk167-art.github.io/expense-split-manager/`
 - localStorageによるローカル保存
 - 分割入力専用の商品登録
   - カテゴリ
@@ -97,7 +98,7 @@ npm run dev
 通常は以下で表示します。
 
 ```text
-http://localhost:5173/receipt-split-manager/
+http://localhost:5173/expense-split-manager/
 ```
 
 スマホ実機で確認する場合は、同じWi-Fi内のPCで以下を実行します。
@@ -109,7 +110,7 @@ npm run dev -- --host 0.0.0.0
 スマホから以下の形式でアクセスします。
 
 ```text
-http://PCのIPアドレス:5173/receipt-split-manager/
+http://PCのIPアドレス:5173/expense-split-manager/
 ```
 
 ## 9. ビルド確認方法
@@ -124,7 +125,8 @@ npm run build
 
 - データ保存はlocalStorageです。
 - 既存データ互換のため、localStorageキー `receipt-split-manager:v1` は変更しません。
-- PWA manifestの`id`は追加していません。旧URLでインストール済みの場合は、新URLで再インストールが必要になる可能性があります。
+- 既存PWAの識別継続のため、manifestの`id`は旧start URL `/receipt-split-manager/` を維持します。
+- 新しいバックアップファイル名には `expense-split-manager` を使用します。JSON構造は変更しません。
 - ブラウザ変更、端末変更、キャッシュ削除、サイトデータ削除でデータが消える可能性があります。
 - 重要なデータはデータ管理タブからJSONバックアップしてください。
 - 実支出と配分入力は別データとして扱います。
@@ -134,4 +136,4 @@ npm run build
 - 旧通常入力の商品を編集保存すると、分割設定と分割予定が作成されます。
 - 旧データに分類文字列だけがある場合は表示用に残し、編集時は未分類扱いにします。
 - 旧JSONにカテゴリ設定がない場合は初期カテゴリを使います。
-- `origin`は `https://github.com/yuuitihtnk167-art/receipt-split-manager.git` に設定済みです。
+- リポジトリ名変更までは、`origin`に `https://github.com/yuuitihtnk167-art/receipt-split-manager.git` を使用します。
