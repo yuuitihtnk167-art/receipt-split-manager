@@ -2,13 +2,12 @@
 
 ## 1. アプリ名
 
-- 日本語名: 家計簿分割入力支援アプリ
-- 英語名: Expense Split Manager
-- パッケージ名: expense-split-manager
+- アプリ名: Receipt Split Manager
+- パッケージ名: receipt-split-manager
 
 ## 2. GitHubリポジトリURL
 
-https://github.com/yuuitihtnk167-art/expense-split-manager
+https://github.com/yuuitihtnk167-art/receipt-split-manager
 
 ## 3. ローカル作業フォルダ
 
@@ -16,14 +15,14 @@ https://github.com/yuuitihtnk167-art/expense-split-manager
 C:\GitHub\money\receipt-split-manager
 ```
 
-ローカルフォルダ名は現時点では変更していません。
+ローカルフォルダ名も `receipt-split-manager` に統一しています。
 
 ## 4. 現在実装済みの機能
 
 - Vite + React + TypeScript のWebアプリ構成
 - GitHub Pages / PWA用設定
-  - 公開パス: `/expense-split-manager/`
-  - 公開URL: `https://yuuitihtnk167-art.github.io/expense-split-manager/`
+  - 公開パス: `/receipt-split-manager/`
+  - 公開URL: `https://yuuitihtnk167-art.github.io/receipt-split-manager/`
 - localStorageによるローカル保存
 - 分割入力専用の商品登録
   - カテゴリ
@@ -98,7 +97,7 @@ npm run dev
 通常は以下で表示します。
 
 ```text
-http://localhost:5173/expense-split-manager/
+http://localhost:5173/receipt-split-manager/
 ```
 
 スマホ実機で確認する場合は、同じWi-Fi内のPCで以下を実行します。
@@ -110,7 +109,7 @@ npm run dev -- --host 0.0.0.0
 スマホから以下の形式でアクセスします。
 
 ```text
-http://PCのIPアドレス:5173/expense-split-manager/
+http://PCのIPアドレス:5173/receipt-split-manager/
 ```
 
 ## 9. ビルド確認方法
@@ -135,4 +134,4 @@ npm run build
 - 旧通常入力の商品を編集保存すると、分割設定と分割予定が作成されます。
 - 旧データに分類文字列だけがある場合は表示用に残し、編集時は未分類扱いにします。
 - 旧JSONにカテゴリ設定がない場合は初期カテゴリを使います。
-- リポジトリ名変更後は、`origin`を新URLへ更新してください。
+- `origin`は `https://github.com/yuuitihtnk167-art/receipt-split-manager.git` に設定済みです。
