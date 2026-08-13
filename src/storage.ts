@@ -8,7 +8,7 @@ import {
 } from "./utils/date";
 
 const STORAGE_KEY = "receipt-split-manager:v1";
-const CURRENT_MIGRATION_VERSION = 4;
+const CURRENT_MIGRATION_VERSION = 5;
 
 export const emptyAppData: AppData = {
   productEntries: [],
@@ -125,6 +125,10 @@ export function migrateAppData(
 
   return {
     ...data,
+    categories:
+      migrationVersion < 5
+        ? migrateFoodSubcategories(data.categories)
+        : data.categories,
     splitPlans: data.splitPlans.map((plan) => {
       const isPastMonth = plan.targetMonth < currentMonth;
       const shouldMigrateStatus =
@@ -166,6 +170,38 @@ export function migrateAppData(
     settings: normalizeAppSettings(data.settings),
     migrationVersion: CURRENT_MIGRATION_VERSION,
   };
+}
+
+function migrateFoodSubcategories(categories: CategoryGroup[]): CategoryGroup[] {
+  const defaultFoodCategory = defaultCategories.find(
+    (category) => category.name === "食費",
+  );
+
+  if (!defaultFoodCategory) {
+    return categories;
+  }
+
+  const defaultNames = new Set(
+    defaultFoodCategory.subcategories.map((subcategory) => subcategory.name),
+  );
+
+  return categories.map((category) => {
+    if (category.name !== defaultFoodCategory.name) {
+      return category;
+    }
+
+    const customSubcategories = category.subcategories.filter(
+      (subcategory) => !defaultNames.has(subcategory.name),
+    );
+
+    return {
+      ...category,
+      subcategories: [
+        ...defaultFoodCategory.subcategories,
+        ...customSubcategories,
+      ],
+    };
+  });
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
