@@ -3,7 +3,7 @@ import type { CategoryGroup } from "./types";
 const categorySeed: Array<{ name: string; subcategories: string[] }> = [
   {
     name: "食費",
-    subcategories: ["食料品", "外食", "朝ご飯", "昼ご飯", "夜ご飯", "カフェ", "その他食事"],
+    subcategories: ["健康食品", "食費", "食料品", "外食", "朝ご飯", "昼ご飯", "夜ご飯", "カフェ", "その他食事"],
   },
   {
     name: "日用品",

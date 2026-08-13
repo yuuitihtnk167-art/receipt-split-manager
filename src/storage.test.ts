@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { defaultCategories } from "./categories";
 import {
   loadAppData,
   migrateAppData,
@@ -89,7 +90,7 @@ describe("normalizeImportedAppData", () => {
 });
 
 describe("migrateAppData", () => {
-  it("updates version 2 data to version 4 without changing existing records", () => {
+  it("updates version 2 data to version 5 without changing existing records", () => {
     const data: AppData = {
       productEntries: [],
       splitSettings: [],
@@ -103,8 +104,50 @@ describe("migrateAppData", () => {
 
     expect(migratedData).toEqual({
       ...data,
-      migrationVersion: 4,
+      migrationVersion: 5,
     });
+  });
+
+  it("updates the food subcategories in the requested order", () => {
+    const foodCategory = defaultCategories.find(
+      (category) => category.name === "食費",
+    );
+    const data: AppData = {
+      productEntries: [],
+      splitSettings: [],
+      splitPlans: [],
+      categories: [
+        {
+          id: "food",
+          name: "食費",
+          subcategories: [
+            { id: "groceries", name: "食料品" },
+            { id: "custom", name: "自作カテゴリ" },
+          ],
+        },
+      ],
+      settings: { closingDay: 31 },
+      migrationVersion: 4,
+    };
+
+    const migratedData = migrateAppData(data, "2026-06");
+
+    expect(migratedData.categories[0].subcategories.map(({ name }) => name)).toEqual([
+      "健康食品",
+      "食費",
+      "食料品",
+      "外食",
+      "朝ご飯",
+      "昼ご飯",
+      "夜ご飯",
+      "カフェ",
+      "その他食事",
+      "自作カテゴリ",
+    ]);
+    expect(migratedData.categories[0].subcategories.slice(0, 9)).toEqual(
+      foodCategory?.subcategories,
+    );
+    expect(migratedData.migrationVersion).toBe(5);
   });
 
   it("restores an incorrectly completed current period when the next month is pending", () => {
@@ -167,7 +210,7 @@ describe("migrateAppData", () => {
     expect(migratedData.splitPlans[0].status).toBe("done");
   });
 
-  it("does not repeat the current-period repair after version 4", () => {
+  it("does not repeat migrations after version 5", () => {
     const data: AppData = {
       productEntries: [],
       splitSettings: [],
@@ -191,7 +234,7 @@ describe("migrateAppData", () => {
       ],
       categories: [],
       settings: { closingDay: 15 },
-      migrationVersion: 4,
+      migrationVersion: 5,
     };
 
     expect(migrateAppData(data, "2026-06")).toBe(data);
