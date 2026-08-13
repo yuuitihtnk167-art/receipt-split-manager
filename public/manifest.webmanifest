@@ -1,7 +1,7 @@
 {
-  "name": "家計簿分割入力支援アプリ",
-  "short_name": "Expense Split",
-  "description": "マネーフォワードへ高額支出を分割入力するための家計簿分割入力支援アプリ",
+  "name": "Receipt Split Manager",
+  "short_name": "Receipt Split Manager",
+  "description": "マネーフォワードへ高額支出を分割入力するためのReceipt Split Manager",
   "start_url": "/receipt-split-manager/",
   "scope": "/receipt-split-manager/",
   "display": "standalone",

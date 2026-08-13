@@ -12,7 +12,7 @@ afterEach(() => {
 describe("backup history", () => {
   it("creates a filename with seconds", () => {
     expect(createBackupFilename(new Date(2026, 5, 15, 12, 34, 56))).toBe(
-      "expense-split-manager-backup-2026-06-15T12-34-56.json",
+      "receipt-split-manager-backup-2026-06-15T12-34-56.json",
     );
   });
 
@@ -35,5 +35,21 @@ describe("backup history", () => {
     });
 
     expect(loadLastBackupFilename()).toBeNull();
+  });
+
+  it("migrates the last filename from the legacy storage key", () => {
+    const values = new Map<string, string>([
+      ["expense-split-manager:last-backup-filename", "legacy-backup.json"],
+    ]);
+
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    });
+
+    expect(loadLastBackupFilename()).toBe("legacy-backup.json");
+    expect(
+      values.get("receipt-split-manager:last-backup-filename"),
+    ).toBe("legacy-backup.json");
   });
 });

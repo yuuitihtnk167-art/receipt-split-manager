@@ -1,6 +1,6 @@
-# 家計簿分割入力支援アプリ
+# Receipt Split Manager
 
-英語名: Expense Split Manager
+アプリ名: Receipt Split Manager
 
 GitHubリポジトリ: `receipt-split-manager`
 
