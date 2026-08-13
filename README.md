@@ -2,7 +2,7 @@
 
 英語名: Expense Split Manager
 
-GitHubリポジトリ: `expense-split-manager`
+GitHubリポジトリ: `receipt-split-manager`
 
 マネーフォワードへ高額支出や任意の支出を数ヶ月に分けて入力するための、分割入力専用PWAアプリです。
 実際に支払った「実支出」と、家計簿上で月ごとに入力する「配分入力」を分けて管理します。
@@ -67,7 +67,7 @@ npm run dev
 ブラウザで以下を開きます。
 
 ```text
-http://localhost:5173/expense-split-manager/
+http://localhost:5173/receipt-split-manager/
 ```
 
 スマホ実機から確認する場合は、同じWi-Fi内のPCでホストを指定して起動します。
@@ -79,7 +79,7 @@ npm run dev -- --host 0.0.0.0
 PCのローカルIPアドレスを確認し、スマホのブラウザで以下のようにアクセスします。
 
 ```text
-http://PCのIPアドレス:5173/expense-split-manager/
+http://PCのIPアドレス:5173/receipt-split-manager/
 ```
 
 ## GitHub Pages
@@ -87,7 +87,7 @@ http://PCのIPアドレス:5173/expense-split-manager/
 公開URL:
 
 ```text
-https://yuuitihtnk167-art.github.io/expense-split-manager/
+https://yuuitihtnk167-art.github.io/receipt-split-manager/
 ```
 
 GitHub Pagesの公開元はGitHub Actionsを使用します。

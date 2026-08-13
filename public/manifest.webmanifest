@@ -2,20 +2,20 @@
   "name": "家計簿分割入力支援アプリ",
   "short_name": "Expense Split",
   "description": "マネーフォワードへ高額支出を分割入力するための家計簿分割入力支援アプリ",
-  "start_url": "/expense-split-manager/",
-  "scope": "/expense-split-manager/",
+  "start_url": "/receipt-split-manager/",
+  "scope": "/receipt-split-manager/",
   "display": "standalone",
   "background_color": "#f6f7f4",
   "theme_color": "#31634f",
   "icons": [
     {
-      "src": "/expense-split-manager/icons/icon-192.png",
+      "src": "/receipt-split-manager/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/expense-split-manager/icons/icon-512.png",
+      "src": "/receipt-split-manager/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
